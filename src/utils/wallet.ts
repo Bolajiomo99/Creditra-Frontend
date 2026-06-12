@@ -9,6 +9,13 @@ declare global {
   }
 }
 
+/**
+ * Detects whether a given Stellar wallet browser extension is currently
+ * installed and exposed on the window object.
+ *
+ * This is a synchronous, side-effect-free probe — it does not request user
+ * permission or trigger any UI from the wallet.
+ */
 export const isWalletInstalled = (type: WalletType): boolean => {
   if (type === 'freighter') return !!window.freighter;
   if (type === 'albedo') return !!window.albedo;
