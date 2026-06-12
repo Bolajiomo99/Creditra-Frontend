@@ -73,6 +73,18 @@ npm run build
 npm run preview   # serve dist/
 ```
 
+### Running tests
+
+We use [Vitest](https://vitest.dev/) with `@testing-library/react`:
+
+```bash
+npm test                 # run the suite once
+npm test -- --watch      # re-run on file changes
+```
+
+Test files live alongside the code they cover and use the `.test.ts(x)`
+suffix.
+
 ### Environment
 
 Create a `.env` file if you need to point to a specific backend:
