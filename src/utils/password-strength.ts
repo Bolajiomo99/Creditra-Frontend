@@ -2,6 +2,13 @@
 
 import { PasswordStrength } from '@/types/auth.types'
 
+/**
+ * Calculates a coarse-grained password strength rating from a raw password.
+ *
+ * The score is the sum of small heuristics: length >= 8, length >= 12, the
+ * presence of lowercase, uppercase, digits, and non-alphanumeric characters.
+ * Empty passwords are reported as `weak` rather than throwing.
+ */
 export function calculatePasswordStrength(password: string): PasswordStrength {
   if (password.length === 0) return 'weak'
   
