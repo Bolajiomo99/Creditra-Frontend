@@ -28,6 +28,10 @@ export const STATUS_COLOR: Record<CreditLineStatus, { bg: string; color: string;
   Closed: { bg: 'rgba(139,148,158,0.16)', color: '#c4ccd6', border: 'rgba(139,148,158,0.42)' },
 };
 
+/**
+ * Map a numeric risk score (0–850, FICO-style scale) to a semantic color.
+ * Mirrors the credit-score badge thresholds used on the dashboard.
+ */
 export const RISK_COLOR = (score: number) =>
   score >= 700 ? COLOR.success : score >= 600 ? COLOR.warning : COLOR.danger;
 
