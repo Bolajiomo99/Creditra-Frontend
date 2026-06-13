@@ -98,6 +98,30 @@ function RiskGauge({ score, trend, lastUpdated }: {
 
 // ─── Dashboard Component ──────────────────────────────────────────────────────
 
+/**
+ * Default landing screen for a connected user.
+ *
+ * Renders four blocks in order of importance to the user:
+ *
+ *   1. Risk gauge — the score that determines every other number on the
+ *      page. Highest visual priority. See UX_RATIONALE.md "Risk gauge
+ *      prominently on the dashboard".
+ *   2. Credit summary tiles — total limit, drawn, available, next
+ *      payment.
+ *   3. Active credit lines — quick navigation into the credit-line
+ *      detail view.
+ *   4. Recent transactions — a five-row preview of the ledger with a
+ *      link into the full history.
+ *
+ * Loading state is simulated by a `setTimeout` to demonstrate the
+ * shimmer-skeleton pattern; when the backend lands, replace it with a
+ * real fetch (and keep the four-state loading -> empty / ready /
+ * error policy documented in `ARCHITECTURE.md` section 5).
+ *
+ * The page is intentionally stateless from a navigation perspective —
+ * it pulls wallet info from `useWallet()` and credit data from the mock
+ * data layer; everything else is rendered output.
+ */
 export function Dashboard() {
   const { wallet, status } = useWallet();
   const creditLines = MOCK_CREDIT_LINES;
