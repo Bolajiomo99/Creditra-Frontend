@@ -1,3 +1,16 @@
+/**
+ * Design tokens consumed at the JS layer.
+ *
+ * Most components style themselves with CSS custom properties declared
+ * in `src/index.css`. This file exists for the cases where a component
+ * needs a token value in JavaScript — typically because the style is
+ * applied as an inline `React.CSSProperties` (e.g. SVG fill on the risk
+ * gauge, the dynamic badge palettes) rather than via a class name.
+ *
+ * Every value here must mirror the equivalent CSS custom property. If
+ * you change one, change the other. See `docs/DESIGN_SYSTEM.md` for the
+ * canonical catalogue.
+ */
 import type { CreditLineStatus, UtilizationLevel } from '../types/creditLine';
 import type React from 'react';
 

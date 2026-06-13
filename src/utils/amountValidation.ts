@@ -1,5 +1,22 @@
+/**
+ * UI-side amount validation for the draw and repay flows.
+ *
+ * The functions in this module produce *graded* feedback rather than a
+ * binary valid/invalid. Each severity drives a different visual tone
+ * (info / success / warning / danger) so the input feels conversational
+ * during typing rather than hostile.
+ *
+ * These checks are deliberately optimistic guard rails — the Soroban
+ * contract is the source of truth for what will actually be accepted,
+ * and the backend will reject anything that slips through here. See
+ * `docs/UX_RATIONALE.md` "Inline validation, not submit-time validation".
+ */
 export type ValidationSeverity = 'info' | 'success' | 'warning' | 'danger';
 
+/**
+ * Single piece of feedback paired with an `AmountInput` / `RepayModal`
+ * tone band. `title` is the bold leading line; `message` is the body.
+ */
 interface ValidationFeedback {
   severity: ValidationSeverity;
   title: string;
