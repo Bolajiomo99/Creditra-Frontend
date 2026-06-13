@@ -8,6 +8,29 @@ import { RequestEvaluation } from "./pages/RequestEvaluation";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { NotFound } from "./pages/NotFound";
 
+/**
+ * Application root.
+ *
+ * Composition order is load-bearing:
+ *
+ *   <ErrorBoundary>          // catches render errors in everything below
+ *     <WalletProvider>       // wallet lifecycle visible to every route
+ *       <BrowserRouter>      // route tree
+ *         <header />         // rendered outside <Routes/> so it persists
+ *         <main>
+ *           <Routes />       // current route
+ *         </main>
+ *       </BrowserRouter>
+ *     </WalletProvider>
+ *   </ErrorBoundary>
+ *
+ * The error boundary is the outer wrapper so a failure inside the
+ * wallet reducer still renders the fallback page rather than a blank
+ * screen. The header sits outside `<Routes>` so a route change never
+ * dismounts the wallet button or the navigation chrome.
+ *
+ * See `docs/ARCHITECTURE.md` for the full component topology.
+ */
 function App() {
   return (
     <ErrorBoundary>
