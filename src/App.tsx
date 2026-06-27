@@ -4,8 +4,9 @@ import { CommandPalette } from "./components/CommandPalette";
 import { Dashboard } from "./pages/Dashboard";
 import { WalletProvider } from "./context/WalletContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import { ContrastProvider } from "./context/ContrastContext";
+import { KycProvider } from "./context/KycContext";
 import { WalletButton } from "./components/WalletButton";
+import { KycDrawer, KycTriggerButton } from "./components/KycDrawer";
 import DrawCreditPage from "./pages/DrawCreditPage";
 import CreditLines from "./pages/CreditLines";
 import { TransactionHistory } from "./pages/TransactionHistory";
@@ -55,7 +56,9 @@ const isEditableTarget = (target: EventTarget | null) => {
 function App() {
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [openedFromSettingsLink, setOpenedFromSettingsLink] = useState(false);
+  const [isKycDrawerOpen, setIsKycDrawerOpen] = useState(false);
   const settingsTriggerRef = useRef<HTMLButtonElement>(null);
+  const kycTriggerRef = useRef<HTMLButtonElement>(null);
 
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const paletteTriggerRef = useRef<HTMLElement | null>(null);
@@ -87,123 +90,94 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <ContrastProvider>
-          <WalletProvider>
-            <BrowserRouter>
-              <div className="app">
-                <header className="header">
-                  <Link to="/" className="logo">
-                    Creditra
-                  </Link>
-
-                  <nav className="header-nav">
-                    {/*
-                      NavLink with render-prop className:
-                      - active class: accent + underline + weight (WCAG 1.4.1)
-                      - aria-current="page" on active link (WCAG 2.4.8)
-                    */}
-                    <NavLink
-                      to="/"
-                      end
-                      className={({ isActive }) =>
-                        isActive ? "header-nav-link active" : "header-nav-link"
-                      }
-                    >
-                      Dashboard
-                    </NavLink>
-                    <NavLink
-                      to="/transactions"
-                      className={({ isActive }) =>
-                        isActive ? "header-nav-link active" : "header-nav-link"
-                      }
-                    >
-                      Transactions
-                    </NavLink>
-                    <NavLink
-                      to="/credit-lines"
-                      className={({ isActive }) =>
-                        isActive ? "header-nav-link active" : "header-nav-link"
-                      }
-                    >
-                      Credit Lines
-                    </NavLink>
-                    <NavLink
-                      to="/open-credit"
-                      className={({ isActive }) =>
-                        isActive ? "header-nav-link active" : "header-nav-link"
-                      }
-                    >
-                      Open Credit Line
-                    </NavLink>
-                    <NavLink
-                      to="/dutch-auctions"
-                      className={({ isActive }) =>
-                        isActive ? "header-nav-link active" : "header-nav-link"
-                      }
-                    >
-                      Dutch Auctions
-                    </NavLink>
-                    <NavLink
-                      to="/settings"
-                      className={({ isActive }) =>
-                        isActive ? "header-nav-link active" : "header-nav-link"
-                      }
-                    >
-                      Settings
-                    </NavLink>
-                  </nav>
-
-                  {/* Keyboard shortcut help trigger (? key) */}
-                  <button
-                    ref={settingsTriggerRef}
-                    type="button"
-                    className="header-nav-link"
-                    aria-label="Keyboard shortcuts"
-                    onClick={() => {
-                      setOpenedFromSettingsLink(true);
-                      setIsShortcutHelpOpen(true);
-                    }}
-                  >
-                    ?
-                  </button>
-
-                  <WalletButton />
-                </header>
-
-                <main className="main">
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route
-                      path="/transactions"
-                      element={<TransactionHistory />}
-                    />
-                    <Route path="/credit-lines" element={<CreditLines />} />
-                    <Route path="/help" element={<HelpCenter />} />
-                    <Route path="/draw-credit" element={<DrawCreditPage />} />
-                    <Route
-                      path="/draw-credit/success"
-                      element={<DrawCreditPage />}
-                    />
-                    <Route
-                      path="/open-credit"
-                      element={<RequestEvaluation />}
-                    />
-                    <Route
-                      path="/dutch-auctions"
-                      element={<DutchAuctions />}
-                    />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </main>
-
-                <ShortcutHelpOverlay
-                  isOpen={isShortcutHelpOpen}
-                  onClose={() => setIsShortcutHelpOpen(false)}
-                  triggerRef={
-                    openedFromSettingsLink ? settingsTriggerRef : undefined
+      <WalletProvider>
+        <KycProvider>
+        <BrowserRouter>
+          <div className="app">
+            <header className="header">
+              <Link to="/" className="logo">
+                Creditra
+              </Link>
+              <nav className="header-nav">
+                {/* 
+                  NavLink with render function allows us to:
+                  1. Apply active class for styling (accent + underline + weight)
+                  2. Set aria-current="page" on active links for accessibility
+                  
+                  This satisfies WCAG 2.1 AA requirements:
+                  - 1.4.1: Use of Color - active state uses color + other visual indicators
+                  - 2.4.7: Focus Visible - outline differs from active underline
+                  - 2.4.8: Location - aria-current="page" indicates current page
+                */}
+                <NavLink
+                  to="/"
+                  end
+                  className={({ isActive }) =>
+                    isActive ? "header-nav-link active" : "header-nav-link"
                   }
+                >
+                  Dashboard
+                </NavLink>
+                <NavLink
+                  to="/transactions"
+                  className={({ isActive }) =>
+                    isActive ? "header-nav-link active" : "header-nav-link"
+                  }
+                >
+                  Transactions
+                </NavLink>
+                <NavLink
+                  to="/credit-lines"
+                  className={({ isActive }) =>
+                    isActive ? "header-nav-link active" : "header-nav-link"
+                  }
+                >
+                  Credit Lines
+                </NavLink>
+                <NavLink
+                  to="/open-credit"
+                  className={({ isActive }) =>
+                    isActive ? "header-nav-link active" : "header-nav-link"
+                  }
+                >
+                  Open Credit Line
+                </NavLink>
+                <NavLink
+                  to="/dutch-auctions"
+                  className={({ isActive }) =>
+                    isActive ? "header-nav-link active" : "header-nav-link"
+                  }
+                >
+                  Dutch Auctions
+                </NavLink>
+              </nav>
+              <button
+                ref={settingsTriggerRef}
+                type="button"
+                className="header-nav-link"
+                onClick={() => {
+                  setOpenedFromSettingsLink(true);
+                  setIsShortcutHelpOpen(true);
+                }}
+              >
+                Settings
+              </button>
+              <KycTriggerButton
+                triggerRef={kycTriggerRef}
+                onClick={() => setIsKycDrawerOpen(true)}
+              />
+              <WalletButton />
+            </header>
+            <main className="main">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/transactions" element={<TransactionHistory />} />
+                <Route path="/credit-lines" element={<CreditLines />} />
+                <Route path="/help" element={<HelpCenter />} />
+                <Route path="/draw-credit" element={<DrawCreditPage />} />
+                <Route
+                  path="/draw-credit/success"
+                  element={<DrawCreditPage />}
                 />
                 <Route path="/open-credit" element={<RequestEvaluation />} />
                 <Route path="/dutch-auctions" element={<DutchAuctions />} />
@@ -215,13 +189,20 @@ function App() {
               onClose={() => setIsShortcutHelpOpen(false)}
               triggerRef={openedFromSettingsLink ? settingsTriggerRef : undefined}
             />
-            <CommandPalette
-              isOpen={isPaletteOpen}
-              onClose={() => setIsPaletteOpen(false)}
-              triggerRef={paletteTriggerRef as React.RefObject<HTMLElement | null>}
+            <KycDrawer
+              isOpen={isKycDrawerOpen}
+              onClose={() => setIsKycDrawerOpen(false)}
+              onResume={(stepId) => {
+                // Navigate to the KYC page with the step pre-selected.
+                // Replace with router.push('/kyc?step=' + stepId) when the
+                // full KYC page exists.
+                console.info('[KYC] Resume at step:', stepId);
+              }}
+              triggerRef={kycTriggerRef}
             />
           </div>
         </BrowserRouter>
+        </KycProvider>
       </WalletProvider>
     </ErrorBoundary>
   );
