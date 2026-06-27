@@ -1,26 +1,57 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { StatusBadge } from '../components/StatusBadge';
-import { MOCK_CREDIT_LINES } from '../data/mockData';
-import type { CreditLineStatus, SortField, SortDirection } from '../types/creditLine';
+import { useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { StatusBadge } from "../components/StatusBadge";
+import CompareLinesPanel from "../components/CompareLinesPanel";
+import { MOCK_CREDIT_LINES } from "../data/mockData";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { useFocusTrap } from "../hooks/useFocusTrap";
+import { useInertBackdrop } from "../hooks/useInertBackdrop";
+import type {
+  CreditLineStatus,
+  SortField,
+  SortDirection,
+} from "../types/creditLine";
 import {
-  COLOR, UTIL_COLOR,
-  fmt, fmtDate, getUtilizationLevel, utilizationPct,
-} from '../utils/tokens';
-import './CreditLines.css';
+  COLOR,
+  UTIL_COLOR,
+  fmt,
+  fmtDate,
+  getUtilizationLevel,
+  utilizationPct,
+} from "../utils/tokens";
+import "./CreditLines.css";
 
 // ─── Credit Line Card ────────────────────────────────────────────────────────
 
-function CreditLineCard({ line }: { line: typeof MOCK_CREDIT_LINES[0] }) {
+function CreditLineCard({
+  line,
+  isSelected,
+  onToggle,
+}: {
+  line: (typeof MOCK_CREDIT_LINES)[0];
+  isSelected: boolean;
+  onToggle: () => void;
+}) {
   const pct = utilizationPct(line.utilized, line.limit);
   const level = getUtilizationLevel(line.utilized, line.limit);
 
   return (
     <div className="cl-card">
       <div className="cl-card-header">
-        <div>
-          <h3 className="cl-name">{line.name}</h3>
-          <p className="cl-id">{line.id}</p>
+        <div className="cl-card-title-row">
+          <label className="cl-row-select">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={onToggle}
+              aria-label={`Select ${line.name} for comparison`}
+            />
+            <span>Compare</span>
+          </label>
+          <div>
+            <h3 className="cl-name">{line.name}</h3>
+            <p className="cl-id">{line.id}</p>
+          </div>
         </div>
         <StatusBadge status={line.status} />
       </div>
@@ -29,15 +60,24 @@ function CreditLineCard({ line }: { line: typeof MOCK_CREDIT_LINES[0] }) {
         <div className="cl-metrics">
           <div className="cl-metric">
             <span className="cl-metric-label">Limit</span>
-            <span className="cl-metric-value" style={{ color: COLOR.accent }}>{fmt(line.limit)}</span>
+            <span className="cl-metric-value" style={{ color: COLOR.accent }}>
+              {fmt(line.limit)}
+            </span>
           </div>
           <div className="cl-metric">
             <span className="cl-metric-label">Utilized</span>
-            <span className="cl-metric-value" style={{ color: UTIL_COLOR[level] }}>{fmt(line.utilized)}</span>
+            <span
+              className="cl-metric-value"
+              style={{ color: UTIL_COLOR[level] }}
+            >
+              {fmt(line.utilized)}
+            </span>
           </div>
           <div className="cl-metric">
             <span className="cl-metric-label">Available</span>
-            <span className="cl-metric-value" style={{ color: COLOR.success }}>{fmt(line.limit - line.utilized)}</span>
+            <span className="cl-metric-value" style={{ color: COLOR.success }}>
+              {fmt(line.limit - line.utilized)}
+            </span>
           </div>
         </div>
 
@@ -47,7 +87,10 @@ function CreditLineCard({ line }: { line: typeof MOCK_CREDIT_LINES[0] }) {
             <span style={{ color: UTIL_COLOR[level] }}>{pct}%</span>
           </div>
           <div className="cl-util-track">
-            <div className="cl-util-fill" style={{ width: `${pct}%`, background: UTIL_COLOR[level] }} />
+            <div
+              className="cl-util-fill"
+              style={{ width: `${pct}%`, background: UTIL_COLOR[level] }}
+            />
           </div>
         </div>
 
@@ -68,8 +111,11 @@ function CreditLineCard({ line }: { line: typeof MOCK_CREDIT_LINES[0] }) {
       </div>
 
       <div className="cl-card-footer">
-        {line.status === 'Active' && line.limit > line.utilized && (
-          <Link to={`/draw-credit?line=${line.id}`} className="cl-action-btn draw">
+        {line.status === "Active" && line.limit > line.utilized && (
+          <Link
+            to={`/draw-credit?line=${line.id}`}
+            className="cl-action-btn draw"
+          >
             ↗ Draw
           </Link>
         )}
@@ -84,66 +130,110 @@ function CreditLineCard({ line }: { line: typeof MOCK_CREDIT_LINES[0] }) {
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function CreditLines() {
-  const [sortField, setSortField] = useState<SortField>('updatedAt');
-  const [sortDir, setSortDir] = useState<SortDirection>('desc');
-  const [statusFilter, setStatusFilter] = useState<CreditLineStatus | 'all'>('all');
+  const [sortField, setSortField] = useState<SortField>("updatedAt");
+  const [sortDir, setSortDir] = useState<SortDirection>("desc");
+  const [statusFilter, setStatusFilter] = useState<CreditLineStatus | "all">(
+    "all",
+  );
+  const [selectedLines, setSelectedLines] = useState<string[]>([]);
+  const [showCompare, setShowCompare] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const creditLines = MOCK_CREDIT_LINES;
 
   const filteredAndSorted = useMemo(() => {
-    let filtered = statusFilter === 'all'
-      ? creditLines
-      : creditLines.filter(cl => cl.status === statusFilter);
+    let filtered =
+      statusFilter === "all"
+        ? creditLines
+        : creditLines.filter((cl) => cl.status === statusFilter);
 
     return [...filtered].sort((a, b) => {
       let aVal: number | string = 0;
       let bVal: number | string = 0;
 
       switch (sortField) {
-        case 'status':
+        case "status":
           aVal = a.status;
           bVal = b.status;
           break;
-        case 'limit':
+        case "limit":
           aVal = a.limit;
           bVal = b.limit;
           break;
-        case 'utilization':
+        case "utilization":
           aVal = a.utilized / a.limit;
           bVal = b.utilized / b.limit;
           break;
-        case 'updatedAt':
+        case "updatedAt":
           aVal = new Date(a.updatedAt).getTime();
           bVal = new Date(b.updatedAt).getTime();
           break;
-        case 'apr':
+        case "apr":
           aVal = a.apr;
           bVal = b.apr;
           break;
-        case 'riskScore':
+        case "riskScore":
           aVal = a.riskScore;
           bVal = b.riskScore;
           break;
       }
 
-      if (typeof aVal === 'string') {
-        return sortDir === 'asc'
+      if (typeof aVal === "string") {
+        return sortDir === "asc"
           ? aVal.localeCompare(bVal as string)
           : (bVal as string).localeCompare(aVal);
       }
 
-      return sortDir === 'asc' ? aVal - (bVal as number) : (bVal as number) - aVal;
+      return sortDir === "asc"
+        ? aVal - (bVal as number)
+        : (bVal as number) - aVal;
     });
   }, [creditLines, sortField, sortDir, statusFilter]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortField(field);
-      setSortDir('desc');
+      setSortDir("desc");
     }
   };
+
+  const handleOpenCompare = () => {
+    if (selectedLines.length === 2) {
+      setShowCompare(true);
+    }
+  };
+
+  const handleCloseCompare = () => {
+    setShowCompare(false);
+    setSelectedLines([]);
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedLines((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((lineId) => lineId !== id);
+      } else if (prev.length < 2) {
+        return [...prev, id];
+      }
+      return prev;
+    });
+  };
+
+  const comparePanelRef = useFocusTrap({
+    isActive: showCompare,
+    triggerRef,
+    onEscape: handleCloseCompare,
+  });
+
+  useInertBackdrop({ isInert: showCompare, modalId: "compare-lines-drawer" });
+  useBodyScrollLock({ isLocked: showCompare });
+
+  const selectedCreditLines = useMemo(
+    () => creditLines.filter((line) => selectedLines.includes(line.id)),
+    [creditLines, selectedLines],
+  );
 
   return (
     <div className="credit-lines-page">
@@ -152,15 +242,31 @@ export default function CreditLines() {
           <h1>Credit Lines</h1>
           <p className="subtitle">Manage your credit facilities</p>
         </div>
-        <Link to="/open-credit" className="cl-primary-btn">
-          + Open New Line
-        </Link>
+        <div style={{ display: "flex", gap: "0.75rem" }}>
+          <button
+            ref={triggerRef}
+            className="cl-primary-btn"
+            onClick={handleOpenCompare}
+            disabled={selectedLines.length !== 2}
+            style={{ opacity: selectedLines.length === 2 ? 1 : 0.6 }}
+          >
+            Compare Selected ({selectedLines.length}/2)
+          </button>
+          <Link to="/open-credit" className="cl-primary-btn">
+            + Open New Line
+          </Link>
+        </div>
       </div>
 
       <div className="cl-filters">
         <div className="cl-filter-group">
           <label>Status</label>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as CreditLineStatus | 'all')}>
+          <select
+            value={statusFilter}
+            onChange={(e) =>
+              setStatusFilter(e.target.value as CreditLineStatus | "all")
+            }
+          >
             <option value="all">All Statuses</option>
             <option value="Active">Active</option>
             <option value="Suspended">Suspended</option>
@@ -170,7 +276,10 @@ export default function CreditLines() {
         </div>
         <div className="cl-filter-group">
           <label>Sort By</label>
-          <select value={sortField} onChange={(e) => handleSort(e.target.value as SortField)}>
+          <select
+            value={sortField}
+            onChange={(e) => handleSort(e.target.value as SortField)}
+          >
             <option value="updatedAt">Last Updated</option>
             <option value="status">Status</option>
             <option value="limit">Credit Limit</option>
@@ -181,11 +290,44 @@ export default function CreditLines() {
         </div>
         <button
           className="cl-sort-dir"
-          onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+          onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
         >
-          {sortDir === 'asc' ? '↑' : '↓'}
+          {sortDir === "asc" ? "↑" : "↓"}
         </button>
       </div>
+
+      {showCompare && selectedCreditLines.length === 2 && (
+        <div
+          id="compare-lines-drawer"
+          ref={comparePanelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="compare-lines-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1200,
+            display: "flex",
+            justifyContent: "flex-end",
+            background: "rgba(15, 23, 42, 0.45)",
+            pointerEvents: "auto",
+          }}
+        >
+          <div
+            style={{
+              width: "min(480px, 100%)",
+              height: "100%",
+              position: "relative",
+              zIndex: 1201,
+            }}
+          >
+            <CompareLinesPanel
+              lines={selectedCreditLines}
+              onClose={handleCloseCompare}
+            />
+          </div>
+        </div>
+      )}
 
       {filteredAndSorted.length === 0 ? (
         <div className="cl-empty">
@@ -198,8 +340,13 @@ export default function CreditLines() {
         </div>
       ) : (
         <div className="cl-grid">
-          {filteredAndSorted.map(line => (
-            <CreditLineCard key={line.id} line={line} />
+          {filteredAndSorted.map((line) => (
+            <CreditLineCard
+              key={line.id}
+              line={line}
+              isSelected={selectedLines.includes(line.id)}
+              onToggle={() => toggleSelection(line.id)}
+            />
           ))}
         </div>
       )}
