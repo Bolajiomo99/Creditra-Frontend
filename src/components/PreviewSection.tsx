@@ -1,5 +1,5 @@
 import { CreditLine } from "@/types/draw-credit.types";
-import { DollarSign, TrendingUp } from "lucide-react";
+import { DollarSign, TrendingUp, Info } from "lucide-react";
 
 interface PreviewSectionProps {
   creditLine: CreditLine;
@@ -64,11 +64,23 @@ export function PreviewSection({ creditLine, amount }: PreviewSectionProps) {
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted">After draw</span>
-          <span
-            className={`font-semibold ${newUtilization > 80 ? "text-yellow-500" : "text-foreground"}`}
-          >
-            {newUtilization}%
-          </span>
+          <div className="flex items-center gap-1">
+            <span className={`font-semibold ${newUtilization > 80 ? "text-yellow-500" : "text-foreground"}`}>
+              {newUtilization}%
+            </span>
+            <AccessibleTooltip
+              asPopover={true}
+              content={
+                <div className="max-w-sm">
+                  <p className="font-semibold mb-1">APR Breakdown</p>
+                  <p>Annual Percentage Rate (APR) includes the base interest rate plus any mandatory fees.</p>
+                  <p>For this credit line, APR is {creditLine.apr}%.</p>
+                </div>
+              }
+            >
+              <Info className="w-5 h-5 text-muted cursor-pointer" />
+            </AccessibleTooltip>
+          </div>
         </div>
         <div className="w-full bg-border rounded-full h-2.5">
           <div
