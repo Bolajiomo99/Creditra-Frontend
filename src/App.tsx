@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BrowserRouter, Route, Routes, Link, NavLink } from "react-router-dom";
+import { CommandPalette } from "./components/CommandPalette";
 import { Dashboard } from "./pages/Dashboard";
 import { WalletProvider } from "./context/WalletContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -56,14 +57,20 @@ function App() {
   const [openedFromSettingsLink, setOpenedFromSettingsLink] = useState(false);
   const settingsTriggerRef = useRef<HTMLButtonElement>(null);
 
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const paletteTriggerRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        event.defaultPrevented ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.altKey
-      ) {
+      // Cmd+K / Ctrl+K → toggle command palette
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        paletteTriggerRef.current = document.activeElement as HTMLElement;
+        setIsPaletteOpen((open) => !open);
+        return;
+      }
+
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
       if (event.key !== "?") return;
@@ -198,11 +205,24 @@ function App() {
                     openedFromSettingsLink ? settingsTriggerRef : undefined
                   }
                 />
-              </div>
-            </BrowserRouter>
-          </WalletProvider>
-        </ContrastProvider>
-      </ThemeProvider>
+                <Route path="/open-credit" element={<RequestEvaluation />} />
+                <Route path="/dutch-auctions" element={<DutchAuctions />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            <ShortcutHelpOverlay
+              isOpen={isShortcutHelpOpen}
+              onClose={() => setIsShortcutHelpOpen(false)}
+              triggerRef={openedFromSettingsLink ? settingsTriggerRef : undefined}
+            />
+            <CommandPalette
+              isOpen={isPaletteOpen}
+              onClose={() => setIsPaletteOpen(false)}
+              triggerRef={paletteTriggerRef as React.RefObject<HTMLElement | null>}
+            />
+          </div>
+        </BrowserRouter>
+      </WalletProvider>
     </ErrorBoundary>
   );
 }
