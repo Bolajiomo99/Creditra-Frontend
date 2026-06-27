@@ -120,4 +120,58 @@ describe("TransactionHistory", () => {
     expect(screen.getByLabelText("Start date")).toBeInTheDocument();
     expect(screen.getByLabelText("End date")).toBeInTheDocument();
   });
+
+  // ── A11Y-004: table caption tests ──────────────────────────────────────────
+
+  it("renders a visually-hidden caption on the transaction table", () => {
+    renderTransactionHistory();
+    // The table is identified by its caption text via getByRole
+    const table = screen.getByRole("table", { name: /transaction history/i });
+    expect(table).toBeInTheDocument();
+  });
+
+  it("default caption describes unfiltered scope and result count", () => {
+    renderTransactionHistory();
+    const table = screen.getByRole("table", { name: /transaction history/i });
+    // No filter qualifiers in default state
+    expect(table).toHaveAccessibleName(/transaction history — \d+ results?/i);
+    // Confirm no filter fragment is included
+    expect(table.querySelector("caption")?.textContent).not.toMatch(/filtered by/i);
+  });
+
+  it("caption updates when a type filter is applied", () => {
+    renderTransactionHistory();
+    fireEvent.click(screen.getByRole("button", { name: "Draw" }));
+    const table = screen.getByRole("table", { name: /transaction history/i });
+    expect(table).toHaveAccessibleName(/filtered by draw/i);
+  });
+
+  it("caption updates when a date preset is applied", () => {
+    renderTransactionHistory();
+    fireEvent.click(screen.getByRole("button", { name: "7d" }));
+    const table = screen.getByRole("table", { name: /transaction history/i });
+    expect(table).toHaveAccessibleName(/last 7 days/i);
+  });
+
+  it("caption includes multiple active filter qualifiers simultaneously", () => {
+    renderTransactionHistory();
+    fireEvent.click(screen.getByRole("button", { name: "Repay" }));
+    fireEvent.click(screen.getByRole("button", { name: "30d" }));
+    const caption = screen
+      .getByRole("table", { name: /transaction history/i })
+      .querySelector("caption");
+    expect(caption?.textContent).toMatch(/filtered by repayment/i);
+    expect(caption?.textContent).toMatch(/last 30 days/i);
+  });
+
+  it("caption reverts to unfiltered description after clearing filters", () => {
+    renderTransactionHistory();
+    fireEvent.click(screen.getByRole("button", { name: "Fee" }));
+    fireEvent.click(screen.getByRole("button", { name: "Today" }));
+    fireEvent.click(screen.getByRole("button", { name: /clear filters/i }));
+    const table = screen.getByRole("table", { name: /transaction history/i });
+    expect(table.querySelector("caption")?.textContent).not.toMatch(
+      /filtered by/i,
+    );
+  });
 });
