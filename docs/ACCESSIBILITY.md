@@ -123,7 +123,7 @@ The table below is updated on every accessibility-impacting PR. Status legend:
 | `CopyToClipboard` | Real `<button>`; Enter copies | Specific `aria-label`; polite live region announces "Copied" | AA | n/a | OK |
 | `AccessibleTooltip` | Trigger is keyboard-focusable | `role="tooltip"`, `aria-describedby` | AA | n/a | OK |
 | `NotificationBell` | Tab/Enter; counter is decorative | `aria-label="Notifications, N unread"` | AA | n/a | OK |
-| `NotificationCenter` | Focus trap inside the panel | `role="dialog"`, category filters use `aria-pressed` | AA | reduced-motion gated | OK |
+| `NotificationCenter` | Focus trap inside the panel; mobile Expand/Collapse snap controls for keyboard users | `role="dialog"`, category filters use `role="tab"` + `aria-selected`; iOS safe-area insets on bottom sheet | AA | reduced-motion disables snap transitions | OK |
 | `ToastContainer` | Tab/Esc to dismiss | `role="status"` / `role="alert"` per severity | AA | reduced-motion gated | OK |
 | `BannerAlert` | Tab/Enter on action & dismiss | `role="alert"` for warning/error | AA | n/a | OK |
 | `Dashboard` (risk gauge) | n/a | Score and trend exposed via `<text>` + sibling text | AA | n/a | OK |
