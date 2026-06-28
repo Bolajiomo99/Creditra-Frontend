@@ -5,6 +5,7 @@ import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useInertBackdrop } from '../../hooks/useInertBackdrop';
 import type { NotificationCategory } from '../../types/notification';
 import { CATEGORY_ICON, TYPE_COLOR, TYPE_ICON } from './notificationIcons';
+import { UndoToast } from './UndoToast';
 import './NotificationCenter.css';
 
 const CATEGORIES: { value: NotificationCategory | 'all'; label: string }[] = [
@@ -91,6 +92,8 @@ export function NotificationCenter() {
   const [snapPoint, setSnapPoint] = useState<SheetSnapPoint>('half');
   const [dragHeightPx, setDragHeightPx] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [undoToasts, setUndoToasts] = useState<Array<{ key: number; message: string; ids: string[] }>>([]);
+  const undoToastKeyRef = useRef(0);
 
   const isMobileSheet = useMobileSheetActive();
   const dragStartY = useRef(0);
@@ -105,6 +108,26 @@ export function NotificationCenter() {
   useInertBackdrop({ isInert: isPanelOpen, modalId: 'notification-center' });
 
   const filtered = filterByCategory(activeFilter);
+
+  const handleItemClick = useCallback((id: string) => {
+    const notification = notifications.find(n => n.id === id);
+    if (!notification || notification.read) return;
+
+    markAsRead(id);
+
+    const key = ++undoToastKeyRef.current;
+    setUndoToasts(prev => [...prev, { key, message: '1 notification marked as read', ids: [id] }]);
+  }, [notifications, markAsRead]);
+
+  const handleMarkAllRead = useCallback(() => {
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    if (unreadIds.length === 0) return;
+
+    markAllAsRead();
+
+    const key = ++undoToastKeyRef.current;
+    setUndoToasts(prev => [...prev, { key, message: `${unreadIds.length} notifications marked as read`, ids: unreadIds }]);
+  }, [notifications, markAllAsRead]);
 
   const selectFilterAtIndex = (index: number) => {
     const category = CATEGORIES[index];
@@ -279,7 +302,7 @@ export function NotificationCenter() {
             </button>
             <button
               className="nc-text-btn"
-              onClick={markAllAsRead}
+              onClick={handleMarkAllRead}
               disabled={unreadCount === 0}
               aria-label={`Mark all notifications as read${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
             >
@@ -348,7 +371,7 @@ export function NotificationCenter() {
                 <div
                   key={n.id}
                   className={`nc-item ${!n.read ? 'nc-item-unread' : ''}`}
-                  onClick={() => markAsRead(n.id)}
+                  onClick={() => handleItemClick(n.id)}
                 >
                   <span
                     className="nc-item-icon"
@@ -379,6 +402,15 @@ export function NotificationCenter() {
           )}
         </div>
       </div>
+
+      {undoToasts.map(t => (
+        <UndoToast
+          key={t.key}
+          message={t.message}
+          ids={t.ids}
+          onClose={() => setUndoToasts(prev => prev.filter(x => x.key !== t.key))}
+        />
+      ))}
     </>
   );
 }
